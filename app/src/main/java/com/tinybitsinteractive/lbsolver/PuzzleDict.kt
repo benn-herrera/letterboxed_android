@@ -1,5 +1,6 @@
 package com.tinybitsinteractive.lbsolver
 
+import android.util.Log
 import java.io.BufferedReader
 import java.nio.file.Path
 import kotlin.io.path.inputStream
@@ -8,6 +9,10 @@ import kotlin.io.path.outputStream
 internal class Word(wordText: String) {
     val text: String = wordText.lowercase()
     val chars: Set<Char> = text.toSet()
+}
+
+private fun log(msg: String) {
+    Log.i("PuzzleDict", msg)
 }
 
 internal class PuzzleDict {
@@ -52,7 +57,7 @@ internal class PuzzleDict {
                     ++rawCount
                 }
                 buckets.indices.forEach { buckets[it] = mutableBuckets[it] }
-                logi("PuzzleDict[$size] loaded and filtered from $rawCount cached words.")
+                log("PuzzleDict[$size] loaded and filtered from $rawCount cached words.")
             }
         } catch (_: Throwable) {
         }
@@ -66,7 +71,7 @@ internal class PuzzleDict {
             ++rawCount
         }
         buckets.indices.forEach { buckets[it] = mutableBuckets[it] }
-        logi("PuzzleDict[${size}] created from $rawCount unfiltered words.")
+        log("PuzzleDict[${size}] created from $rawCount unfiltered words.")
     }
 
     val size: Int
@@ -97,6 +102,6 @@ internal class PuzzleDict {
                 }
             }
         }
-        logi("PuzzleDict[$size] saved to cache.")
+        log("PuzzleDict[$size] saved to cache.")
     }
 }

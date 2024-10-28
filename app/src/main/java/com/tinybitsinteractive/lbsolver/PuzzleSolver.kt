@@ -1,10 +1,17 @@
 package com.tinybitsinteractive.lbsolver
 
+import android.util.Log
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Path
 import kotlin.io.path.div
 import kotlin.io.path.exists
+import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
+
+private fun log(msg: String) {
+    Log.i("PuzzleSolver", msg)
+}
 
 internal class PuzzleSolver(
     box: String,
@@ -50,10 +57,16 @@ internal class PuzzleSolver(
         if (dict?.isNotEmpty() != true) {
             val dictCachePath: Path = cacheDir / "puzzle_dict.txt"
             if (!dictCachePath.exists()) {
-                downloadDict()?.save(dictCachePath)
+                val preCacheTime = measureTime {
+                    downloadDict()?.save(dictCachePath)
+                }
+                log("setup precache: ${preCacheTime}")
             }
             if (dictCachePath.exists()) {
-                dict = PuzzleDict(dictCachePath) { word -> worksForPuzzle(word) }
+                val filterLoadTime = measureTime {
+                    dict = PuzzleDict(dictCachePath) { word -> worksForPuzzle(word) }
+                }
+                log("setup filtered load time: ${filterLoadTime}")
             }
         }
     }
@@ -78,14 +91,7 @@ internal class PuzzleSolver(
         return true
     }
 
-    override fun run() {
-        setup()
-
-        if (dict?.isNotEmpty() != true) {
-            onComplete("DOWNLOAD ERROR")
-            return
-        }
-
+    private fun solve(): String {
         val solutions = mutableListOf<String>()
         dict?.let { dict ->
             for (start0 in combinedSides.chars) {
@@ -106,12 +112,31 @@ internal class PuzzleSolver(
             }
         }
 
+        log("${solutions.size} solutions found")
+
         solutions.sortWith { a, b -> a.length - b.length }
 
-        buildString {
+        return buildString {
             solutions.forEach{ append( "$it\n" ) }
-        }.let {
-            onComplete(it.ifEmpty { "No solutions found." })
         }
+    }
+
+    override fun run() {
+        log("run()")
+
+        setup()
+
+        if (dict?.isNotEmpty() != true) {
+            onComplete("DOWNLOAD ERROR")
+            return
+        }
+
+        val (solutions, elapsed) = measureTimedValue {
+            solve()
+        }
+
+        log("solved in $elapsed")
+
+        onComplete(solutions.ifEmpty { "No solutions found." })
     }
 }

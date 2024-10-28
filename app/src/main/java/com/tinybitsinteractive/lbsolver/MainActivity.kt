@@ -1,7 +1,6 @@
 package com.tinybitsinteractive.lbsolver
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,10 +27,6 @@ internal fun cleanSides(sides: String): String {
         }
     }
     return cleaned.trim()
-}
-
-internal fun logi(message: String) {
-    Log.i("LBS", message)
 }
 
 class MainActivity : ComponentActivity() {
