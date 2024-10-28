@@ -2,6 +2,7 @@ package com.tinybitsinteractive.lbsolver
 
 import android.util.Log
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
@@ -44,22 +45,13 @@ internal class PuzzleDict {
         private fun bucketIndex(word: Word) = word.text.first() - 'a'
     }
 
+    constructor(cacheReader: BufferedReader, filter: (word: Word) -> Boolean) {
+        loadFiltered(cacheReader, filter)
+    }
+
     constructor(cachePath: Path, filter: (word: Word) -> Boolean) {
-        try {
-            val mutableBuckets = Array<MutableList<Word>>(26) { mutableListOf() }
-            cachePath.inputStream().bufferedReader().use { cache ->
-                var rawCount = 0
-                cache.forEachLine {
-                    val word = Word(it)
-                    if (filter(word)) {
-                        mutableBuckets[bucketIndex(word)].add(word)
-                    }
-                    ++rawCount
-                }
-                buckets.indices.forEach { buckets[it] = mutableBuckets[it] }
-                log("PuzzleDict[$size] loaded and filtered from $rawCount cached words.")
-            }
-        } catch (_: Throwable) {
+        cachePath.inputStream().bufferedReader().use {
+            loadFiltered(it, filter)
         }
     }
 
@@ -72,6 +64,20 @@ internal class PuzzleDict {
         }
         buckets.indices.forEach { buckets[it] = mutableBuckets[it] }
         log("PuzzleDict[${size}] created from $rawCount unfiltered words.")
+    }
+
+    private fun loadFiltered(cacheReader: BufferedReader, filter: (word: Word) -> Boolean) {
+        val mutableBuckets = Array<MutableList<Word>>(26) { mutableListOf() }
+        var rawCount = 0
+        cacheReader.forEachLine {
+            val word = Word(it)
+            if (filter(word)) {
+                mutableBuckets[bucketIndex(word)].add(word)
+            }
+            ++rawCount
+        }
+        buckets.indices.forEach { buckets[it] = mutableBuckets[it] }
+        log("PuzzleDict[$size] loaded and filtered from $rawCount cached words.")
     }
 
     val size: Int
@@ -93,15 +99,19 @@ internal class PuzzleDict {
         return buckets[letter - 'a']
     }
 
-    fun save(path: Path) {
-        path.outputStream().bufferedWriter().use { cache ->
-            for (bucket in buckets) {
-                for (word in bucket) {
-                    cache.write(word.text)
-                    cache.newLine()
-                }
+    fun save(writer: BufferedWriter) {
+        for (bucket in buckets) {
+            for (word in bucket) {
+                writer.write(word.text)
+                writer.newLine()
             }
         }
         log("PuzzleDict[$size] saved to cache.")
+    }
+
+    fun save(path: Path) {
+        path.outputStream().bufferedWriter().use {
+            save(it)
+        }
     }
 }
