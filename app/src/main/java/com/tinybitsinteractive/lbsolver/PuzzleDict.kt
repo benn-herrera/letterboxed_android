@@ -5,7 +5,6 @@ import java.io.BufferedWriter
 import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
-import kotlin.math.log
 
 internal class Word(wordText: String) {
     val text: String = wordText.lowercase()
@@ -104,6 +103,7 @@ internal class PuzzleDict {
                 writer.write(word.text)
                 writer.newLine()
             }
+            writer.flush()
         }
         logger.info("PuzzleDict[$size] saved to cache.")
     }
