@@ -34,6 +34,10 @@ g       o
 Usage
 -----
 Enter the letters of the puzzle sides in the text field and hit "Solve"
+![0_letterboxed_android_unsolved](https://github.com/user-attachments/assets/87835018-abd6-4e0a-b802-e06df594b60a)
+
+Clear resets the puzzle to allow for entering another
+![1_letterboxed_android solved](https://github.com/user-attachments/assets/acc8c622-51ac-4da1-bd33-eac522f31ade)
 
 * First time of use downloads and caches a dictionary to local storage.
 * Successive uses read the cached dictionary.
