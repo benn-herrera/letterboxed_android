@@ -1,6 +1,5 @@
 package com.tinybitsinteractive.lbsolver
 
-import android.util.Log
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Path
@@ -8,10 +7,6 @@ import kotlin.io.path.div
 import kotlin.io.path.exists
 import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
-
-private fun log(msg: String) {
-    Log.i("PuzzleSolver", msg)
-}
 
 internal class PuzzleSolver(
     box: String,
@@ -21,6 +16,9 @@ internal class PuzzleSolver(
     private val sides = boxToSides(box)
     private val combinedSides = Word(box.replace(" ", ""))
     private var dict: PuzzleDict? = null
+    private val logger: Logger by lazy {
+        Logger.factory.create("PuzzleDict")
+    }
 
     companion object {
         private val wordsUrl =
@@ -39,18 +37,18 @@ internal class PuzzleSolver(
             }
             return sides
         }
+    }
 
-        private fun downloadDict(): PuzzleDict? {
-            try {
-                with(wordsUrl.openConnection() as HttpURLConnection) {
-                    inputStream.bufferedReader().use {
-                        return@downloadDict PuzzleDict(it)
-                    }
+    private fun downloadDict(): PuzzleDict? {
+        try {
+            with(wordsUrl.openConnection() as HttpURLConnection) {
+                inputStream.bufferedReader().use {
+                    return@downloadDict PuzzleDict(it)
                 }
-            } catch (_: Throwable) {
             }
-            return null
+        } catch (_: Throwable) {
         }
+        return null
     }
 
     private fun setup() {
@@ -60,13 +58,13 @@ internal class PuzzleSolver(
                 val preCacheTime = measureTime {
                     downloadDict()?.save(dictCachePath)
                 }
-                log("setup precache: ${preCacheTime}")
+                logger.metric("setup precache: ${preCacheTime}")
             }
             if (dictCachePath.exists()) {
                 val filterLoadTime = measureTime {
                     dict = PuzzleDict(dictCachePath) { word -> worksForPuzzle(word) }
                 }
-                log("setup filtered load time: ${filterLoadTime}")
+                logger.metric("setup filtered load time: ${filterLoadTime}")
             }
         }
     }
@@ -112,7 +110,7 @@ internal class PuzzleSolver(
             }
         }
 
-        log("${solutions.size} solutions found")
+        logger.info("${solutions.size} solutions found")
 
         solutions.sortWith { a, b -> a.length - b.length }
 
@@ -122,7 +120,7 @@ internal class PuzzleSolver(
     }
 
     override fun run() {
-        log("run()")
+        logger.info("run()")
 
         setup()
 
@@ -135,7 +133,7 @@ internal class PuzzleSolver(
             solve()
         }
 
-        log("solved in $elapsed")
+        logger.metric("solved in $elapsed")
 
         onComplete(solutions.ifEmpty { "No solutions found." })
     }

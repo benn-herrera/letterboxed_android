@@ -1,23 +1,22 @@
 package com.tinybitsinteractive.lbsolver
 
-import android.util.Log
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
+import kotlin.math.log
 
 internal class Word(wordText: String) {
     val text: String = wordText.lowercase()
     val chars: Set<Char> = text.toSet()
 }
 
-private fun log(msg: String) {
-    Log.i("PuzzleDict", msg)
-}
-
 internal class PuzzleDict {
     private var buckets = createBuckets()
+    private val logger: Logger by lazy {
+        Logger.factory.create("PuzzleDict")
+    }
 
     companion object {
         private fun createBuckets() : Array<List<Word>> {
@@ -63,7 +62,7 @@ internal class PuzzleDict {
             ++rawCount
         }
         buckets.indices.forEach { buckets[it] = mutableBuckets[it] }
-        log("PuzzleDict[${size}] created from $rawCount unfiltered words.")
+        logger.info("PuzzleDict[${size}] created from $rawCount unfiltered words.")
     }
 
     private fun loadFiltered(cacheReader: BufferedReader, filter: (word: Word) -> Boolean) {
@@ -77,7 +76,7 @@ internal class PuzzleDict {
             ++rawCount
         }
         buckets.indices.forEach { buckets[it] = mutableBuckets[it] }
-        log("PuzzleDict[$size] loaded and filtered from $rawCount cached words.")
+        logger.info("PuzzleDict[$size] loaded and filtered from $rawCount cached words.")
     }
 
     val size: Int
@@ -106,7 +105,7 @@ internal class PuzzleDict {
                 writer.newLine()
             }
         }
-        log("PuzzleDict[$size] saved to cache.")
+        logger.info("PuzzleDict[$size] saved to cache.")
     }
 
     fun save(path: Path) {
