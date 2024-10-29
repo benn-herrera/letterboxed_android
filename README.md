@@ -37,7 +37,6 @@ Enter the letters of the puzzle sides in the text field and hit "Solve"
 
 * First time of use downloads and caches a dictionary to local storage.
 * Successive uses read the cached dictionary.
-* 
 
 Sample Puzzles
 --------------
