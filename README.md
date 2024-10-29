@@ -15,11 +15,13 @@ TL;DR
 
 Example
 -------
+```
  s  a  d
 i       t
 c       n
 g       o
  r  u  h
+```
 
 * standing -> grouch would be one solution to this puzzle
   * There is always at least one two-word solution
