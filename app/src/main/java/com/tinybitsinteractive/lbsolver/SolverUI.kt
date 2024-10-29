@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -34,13 +35,13 @@ import androidx.compose.ui.unit.sp
 import com.tinybitsinteractive.lbsolver.ui.theme.LetterboxedSolverTheme
 
 @Composable
-fun SolverUI(modifier: Modifier = Modifier) {
+fun SolverUI(modifier: Modifier = Modifier, preview: Boolean = false) {
     var sidesTFV by remember {
         // start with example puzzle to make it easy to try out
         mutableStateOf(TextFieldValue("rpj cit owl aks", selection = TextRange(15)))
     }
-
-    var solutions by remember { mutableStateOf( "") }
+    val exampleSolutions by lazy { "lorem -> ipsum\n".repeat(3) }
+    var solutions by remember { mutableStateOf(if (preview) exampleSolutions else "") }
     var working by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -49,8 +50,9 @@ fun SolverUI(modifier: Modifier = Modifier) {
     ) {
         Text(
             modifier = Modifier
-                .height(24.dp)
-                .align(Alignment.CenterHorizontally),
+                .height(40.dp)
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 8.dp),
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
             text = "Letterboxed Solver"
@@ -61,7 +63,10 @@ fun SolverUI(modifier: Modifier = Modifier) {
         )
         {
             TextField(
-                modifier = Modifier.align(Alignment.CenterVertically),
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .width(width = (15 * 12).dp)
+                ,
                 label = { Text(text = "Enter Puzzle Sides") },
                 value = sidesTFV,
                 onValueChange = { tfv ->
@@ -78,49 +83,71 @@ fun SolverUI(modifier: Modifier = Modifier) {
                     }
                 }
             )
+
+            val hasPuzzle = sidesTFV.text.length == 15
+            val hasSolution = solutions.isNotEmpty()
+            val isSolveButton = !hasSolution
+            val buttonText = if (isSolveButton) "Solve" else "Clear"
+            val solveOrClearEnabled =  hasSolution or hasPuzzle
+            val solve = {
+                synchronized(solutions) {
+                    solutions = ""
+                    working = true
+                }
+                val solver = Thread(
+                    PuzzleSolver(
+                        cacheDir = context.cacheDir.toPath(),
+                        box = sidesTFV.text
+                    ) { results ->
+                        synchronized(solutions) {
+                            solutions = results
+                            working = false
+                        }
+                    })
+                solver.start()
+            }
+            val clear = {
+                synchronized(solutions) {
+                    solutions = ""
+                    working = false
+                    sidesTFV = TextFieldValue()
+                }
+            }
+
             Button(
-                modifier = Modifier.align(Alignment.CenterVertically),
-                onClick = {
-                    synchronized(solutions) {
-                        solutions = ""
-                        working = true
-                    }
-                    val solver = Thread(
-                        PuzzleSolver(
-                            cacheDir = context.cacheDir.toPath(),
-                            box = sidesTFV.text
-                        ) { results ->
-                            synchronized(solutions) {
-                                solutions = results
-                                working = false
-                            }
-                        })
-                    solver.start()
-                },
-                enabled = sidesTFV.text.length == 15 && solutions.isEmpty() && !working,
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(start = 8.dp),
+                onClick = if (isSolveButton) solve else clear,
+                enabled = solveOrClearEnabled,
                 content = {
-                    Text("Solve")
+                    Text(buttonText)
                 }
             )
         }
         synchronized(solutions) {
             if (working || solutions.isNotEmpty()) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .padding(top = 4.dp)
                 ) {
-                    Text("Solutions:")
                     val mod = Modifier
                         .border(width = 1.dp, color = Color(0.0f, 0.0f, 0.0f))
                         .padding(start = 5.dp)
                         .fillMaxWidth()
                     if (solutions.isNotEmpty()) {
+                        Text("Solutions:",
+                            modifier = Modifier
+                                .height(30.dp)
+                            )
                         Text(
                             solutions,
                             modifier = mod
                                 .verticalScroll(rememberScrollState())
                         )
                     } else {
-                        WorkingIndicator(modifier = mod)
+                        WorkingIndicator(label = "Working ", modifier = mod)
                     }
                 }
             }
@@ -129,7 +156,7 @@ fun SolverUI(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun WorkingIndicator(modifier: Modifier) {
+fun WorkingIndicator(label: String, modifier: Modifier) {
     val barLength = 12
     val trans = rememberInfiniteTransition(label = "stepTransition")
     val fstep by trans.animateFloat(
@@ -143,7 +170,7 @@ fun WorkingIndicator(modifier: Modifier) {
     )
     val istep = (fstep + 0.5f).toInt()
     Text(
-        text = "=".repeat(istep)
+        text = label + "=".repeat(istep)
                 + "(*)"
                 + "=".repeat(barLength - istep),
         modifier = modifier
@@ -154,6 +181,6 @@ fun WorkingIndicator(modifier: Modifier) {
 @Composable
 fun SolverUIPreview() {
     LetterboxedSolverTheme {
-        SolverUI()
+        SolverUI(preview = true)
     }
 }
